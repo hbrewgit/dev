@@ -317,25 +317,35 @@ namespace QuantConnect
             byte[] result;
             using (var stream = GetMemoryStream(guid))
             {
-                switch (baseData.DataType)
-                {
-                    case MarketDataType.Tick:
-                        Serializer.SerializeWithLengthPrefix(stream, baseData as Tick, PrefixStyle.Base128, 1);
-                        break;
-                    case MarketDataType.QuoteBar:
-                        Serializer.SerializeWithLengthPrefix(stream, baseData as QuoteBar, PrefixStyle.Base128, 1);
-                        break;
-                    case MarketDataType.TradeBar:
-                        Serializer.SerializeWithLengthPrefix(stream, baseData as TradeBar, PrefixStyle.Base128, 1);
-                        break;
-                    default:
-                        Serializer.SerializeWithLengthPrefix(stream, baseData as BaseData, PrefixStyle.Base128, 1);
-                        break;
-                }
+                baseData.ProtobufSerialize(stream);
                 result = stream.ToArray();
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Serialize a base data instance using protobuf
+        /// </summary>
+        /// <param name="baseData">The data point to serialize</param>
+        /// <param name="stream">The destination stream</param>
+        public static void ProtobufSerialize(this IBaseData baseData, Stream stream)
+        {
+            switch (baseData.DataType)
+            {
+                case MarketDataType.Tick:
+                    Serializer.SerializeWithLengthPrefix(stream, baseData as Tick, PrefixStyle.Base128, 1);
+                    break;
+                case MarketDataType.QuoteBar:
+                    Serializer.SerializeWithLengthPrefix(stream, baseData as QuoteBar, PrefixStyle.Base128, 1);
+                    break;
+                case MarketDataType.TradeBar:
+                    Serializer.SerializeWithLengthPrefix(stream, baseData as TradeBar, PrefixStyle.Base128, 1);
+                    break;
+                default:
+                    Serializer.SerializeWithLengthPrefix(stream, baseData as BaseData, PrefixStyle.Base128, 1);
+                    break;
+            }
         }
 
         /// <summary>
@@ -553,9 +563,9 @@ namespace QuantConnect
         }
 
         /// <summary>
-        /// Returns true if the specified <see cref="Series"/> instance holds no <see cref="ChartPoint"/>
+        /// Returns true if the specified <see cref="BaseSeries"/> instance holds no <see cref="ISeriesPoint"/>
         /// </summary>
-        public static bool IsEmpty(this Series series)
+        public static bool IsEmpty(this BaseSeries series)
         {
             return series.Values.Count == 0;
         }

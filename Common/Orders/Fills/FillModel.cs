@@ -104,13 +104,19 @@ namespace QuantConnect.Orders.Fills
                         : MarketOnCloseFill(parameters.Security, parameters.Order as MarketOnCloseOrder));
                     break;
                 case OrderType.ComboMarket:
-                    orderEvents = ComboMarketFill(parameters.Order, parameters);
+                    orderEvents = PythonWrapper != null
+                        ? PythonWrapper.ComboMarketFill(parameters.Order, parameters)
+                        : ComboMarketFill(parameters.Order, parameters);
                     break;
                 case OrderType.ComboLimit:
-                    orderEvents = ComboLimitFill(parameters.Order, parameters);
+                    orderEvents = PythonWrapper != null
+                        ? PythonWrapper.ComboLimitFill(parameters.Order, parameters)
+                        : ComboLimitFill(parameters.Order, parameters);
                     break;
                 case OrderType.ComboLegLimit:
-                    orderEvents = ComboLegLimitFill(parameters.Order, parameters);
+                    orderEvents = PythonWrapper != null
+                        ? PythonWrapper.ComboLegLimitFill(parameters.Order, parameters)
+                        : ComboLegLimitFill(parameters.Order, parameters);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -491,7 +497,11 @@ namespace QuantConnect.Orders.Fills
                     //-> 1.2 Buy Stop: If Price Above Setpoint, Buy:
                     if (prices.High > order.StopPrice || order.StopTriggered)
                     {
-                        order.StopTriggered = true;
+                        if (!order.StopTriggered)
+                        {
+                            order.StopTriggered = true;
+                            Parameters.OnOrderUpdated(order);
+                        }
 
                         // Fill the limit order, using closing price of bar:
                         // Note > Can't use minimum price, because no way to be sure minimum wasn't before the stop triggered.
@@ -509,7 +519,11 @@ namespace QuantConnect.Orders.Fills
                     //-> 1.1 Sell Stop: If Price below setpoint, Sell:
                     if (prices.Low < order.StopPrice || order.StopTriggered)
                     {
-                        order.StopTriggered = true;
+                        if (!order.StopTriggered)
+                        {
+                            order.StopTriggered = true;
+                            Parameters.OnOrderUpdated(order);
+                        }
 
                         // Fill the limit order, using minimum price of the bar
                         // Note > Can't use minimum price, because no way to be sure minimum wasn't before the stop triggered.
